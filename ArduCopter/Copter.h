@@ -227,6 +227,7 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeGeometric;
 
     friend class _AutoTakeoff;
 
@@ -1053,6 +1054,10 @@ private:
 #if MODE_TURTLE_ENABLED == ENABLED
     ModeTurtle mode_turtle;
 #endif
+#if MODE_GEOMETRIC_ENABLED == ENABLED
+    ModeGeometric mode_geometric;
+#endif
+
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
