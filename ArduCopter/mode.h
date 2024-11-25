@@ -1603,12 +1603,50 @@ public:
     bool allows_autotune() const override { return true; }
     bool allows_flip() const override { return true; }
 
+    const float GRAVITY_MAGNITUDE = 9.8; // gravitational acceleration
+
+
+    #if (!REAL_OR_SITL) // SITL
+        // // quad X default parameters
+        const float kg_vehicleMass = 3; // SITL drone mass.    
+        const Matrix3f J = {0.023, 0, 0, 0, 0.023, 0, 0, 0, 0.0459}; // This is pulled from SIM_Motor.cpp
+        const Matrix3f Jinv = {43.478, 0, 0, 0, 43.478, 0, 0, 0, 21.786}; // hand-computed
+
+        // // freestyle default parameters, using inertia of NGD odroid
+        // const float kg_vehicleMass = 0.8; // SITL drone mass.    
+        // const Matrix3f J = {0.0027, 0, 0, 0, 0.0028, 0, 0, 0, 0.0037}; // This is pulled from SIM_Motor.cpp
+        // const Matrix3f Jinv = {370.37, 0, 0, 0, 357.143, 0, 0, 0, 270.27}; // hand-computed
+    #elif (REAL_OR_SITL) // Real 
+        const float kg_vehicleMass = 0.62;   // weight for the real drone
+        const Matrix3f J = {0.002016, 0, 0, 0, 0.001827, 0, 0, 0, 0.00322}; // This is from CAD model of the real drone
+        const Matrix3f Jinv = {496.03, 0, 0, 0, 547.345, 0, 0, 0, 310.559}; // hand-computed
+    #endif
+    
 protected:
 
     const char *name() const override { return "GEOMETRIC"; }
     const char *name4() const override { return "GEOM"; }
 
 private:
+    VectorN<float, 4> geometricAttitudeController(Matrix3f targetattitude); //simplifed controller ,only control attidude
+    VectorN<float, 4> GeometricTrajectoryController(
+                                                    Vector3f targetPos,
+                                                    Vector3f targetVel,
+                                                    Vector3f targetAcc,
+                                                    Vector3f targetJerk,
+                                                    Vector3f targetSnap,
+                                                    Vector2f targetYaw,
+                                                    Vector2f targetYaw_dot,
+                                                    Vector2f targetYaw_ddot);// controller for trajectory control
+
+
+    Matrix3f hatOperator(Vector3f input);
+    Vector3f veeOperator(Matrix3f input);
+    VectorN<float,9> unit_vec(Vector3f q, Vector3f q_dot, Vector3f q_ddot);
+    VectorN<float,4> motorMixing(VectorN<float,4> thrustMomentCmd);
+    VectorN<float,4> iterativeMotorMixing(VectorN<float, 4> w_input, VectorN<float, 4> thrustMomentCmd, float a_F, float b_F, float a_M, float b_M, float L, float D);
+    VectorN<float,16> mat4Inv(VectorN<float,4> coefficientRow1, VectorN<float,4> coefficientRow2, VectorN<float,4> coefficientRow3, VectorN<float,4> coefficientRow4);
+    Matrix3f JoyStickToTargetAttitude();
 
 };
 

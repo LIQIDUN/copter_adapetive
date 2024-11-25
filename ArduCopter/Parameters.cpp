@@ -431,6 +431,126 @@ const AP_Param::Info Copter::var_info[] = {
     GSCALAR(acro_balance_pitch,     "ACRO_BAL_PITCH",   ACRO_BALANCE_PITCH),
 #endif
 
+
+#if MODE_GEOMETRIC_ENABLED == ENABLED
+    // AP_Float GeoCtrl_Kpx; // kpx for geometric controller
+    // AP_Float GeoCtrl_Kpy; // kpy for geometric controller
+    // AP_Float GeoCtrl_Kpz; // kpz for geometric controllerF
+    // AP_Float GeoCtrl_Kvx; // kvx for geometric controller
+    // AP_Float GeoCtrl_Kvy; // kvy for geometric controller
+    // AP_Float GeoCtrl_Kvz; // kvz for geometric controllerF
+    // AP_Float GeoCtrl_KRx; // kRx for geometric controller
+    // AP_Float GeoCtrl_KRy; // kRy for geometric controller
+    // AP_Float GeoCtrl_KRz; // kRz for geometric controllerF
+    // AP_Float GeoCtrl_KOx; // kOmegax for geometric controller
+    // AP_Float GeoCtrl_KOy; // kOmegay for geometric controller
+    // AP_Float GeoCtrl_KOz; // kOmegaz for geometric controller
+    // AP_Int8 l1enable; // enabling switch for L1 adaptive controller
+    // AP_Float cutoffFreq; // cutoff frequency for the LPF in the L1 adaptive controller (in rad/s)
+
+    // @Param: GEOCTRL_KPX
+    // @DisplayName: kpx for geometric controller
+    // @Description: kpx for geometric controller, which is the P term in translational control for the x axis
+    // @Units: none
+    // @Range: 0 - 10000
+    // @User: Advanced
+    GSCALAR(GeoCtrl_Kpx, "GEOCTRL_KPX", GEOCTRL_KPX_DEFAULT),
+    // @Param: GEOCTRL_KPY
+    // @DisplayName: kpy for geometric controller
+    // @Description: kpy for geometric controller, which is the P term in translational control for the y axis
+    // @Units: none
+    // @Range: 0 - 10000
+    // @User: Advanced
+    GSCALAR(GeoCtrl_Kpy, "GEOCTRL_KPY", GEOCTRL_KPY_DEFAULT),
+    // @Param: GEOCTRL_KPZ
+    // @DisplayName: kpz for geometric controller
+    // @Description: kpz for geometric controller, which is the P term in translational control for the z axis
+    // @Units: none
+    // @Range: 0 - 10000
+    // @User: Advanced
+    GSCALAR(GeoCtrl_Kpz, "GEOCTRL_KPZ", GEOCTRL_KPZ_DEFAULT),
+
+    // @Param: GEOCTRL_KVX
+    // @DisplayName: kvx for geometric controller
+    // @Description: kvx for geometric controller, which is the D term in translational control for the x axis
+    // @Units: none
+    // @Range: 0 - 10000
+    // @User: Advanced
+    GSCALAR(GeoCtrl_Kvx, "GEOCTRL_KVX", GEOCTRL_KVX_DEFAULT),
+    // @Param: GEOCTRL_KVY
+    // @DisplayName: kvy for geometric controller
+    // @Description: kvy for geometric controller, which is the D term in translational control for the y axis
+    // @Units: none
+    // @Range: 0 - 10000
+    // @User: Advanced
+    GSCALAR(GeoCtrl_Kvy, "GEOCTRL_KVY", GEOCTRL_KVY_DEFAULT),
+    // @Param: GEOCTRL_KVZ
+    // @DisplayName: kvz for geometric controller
+    // @Description: kvz for geometric controller, which is the D term in translational control for the z axis
+    // @Units: none
+    // @Range: 0 - 10000
+    // @User: Advanced
+    GSCALAR(GeoCtrl_Kvz, "GEOCTRL_KVZ", GEOCTRL_KVZ_DEFAULT),
+
+    // @Param: GEOCTRL_KRX
+    // @DisplayName: kRx for geometric controller
+    // @Description: kRx for geometric controller, which is the P term in rotational control for the x axis
+    // @Units: none
+    // @Range: 0 - 10000
+    // @User: Advanced
+    GSCALAR(GeoCtrl_KRx, "GEOCTRL_KRX", GEOCTRL_KRX_DEFAULT),
+    // @Param: GEOCTRL_KRY
+    // @DisplayName: kRy for geometric controller
+    // @Description: kRy for geometric controller, which is the P term in rotational control for the y axis
+    // @Units: none
+    // @Range: 0 - 10000
+    // @User: Advanced
+    GSCALAR(GeoCtrl_KRy, "GEOCTRL_KRY", GEOCTRL_KRY_DEFAULT),
+    // @Param: GEOCTRL_KRZ
+    // @DisplayName: kRz for geometric controller
+    // @Description: kRz for geometric controller, which is the P term in rotational control for the z axis
+    // @Units: none
+    // @Range: 0 - 10000
+    // @User: Advanced
+    GSCALAR(GeoCtrl_KRz, "GEOCTRL_KRZ", GEOCTRL_KRZ_DEFAULT),
+
+    // @Param: GEOCTRL_KOX
+    // @DisplayName: kOx for geometric controller
+    // @Description: kOx for geometric controller, which is the D term in rotational control for the x axis
+    // @Units: none
+    // @Range: 0 - 10000
+    // @User: Advanced
+    GSCALAR(GeoCtrl_KOx, "GEOCTRL_KOX", GEOCTRL_KOX_DEFAULT),
+    // @Param: GEOCTRL_KOY
+    // @DisplayName: kOy for geometric controller
+    // @Description: kOy for geometric controller, which is the D term in rotational control for the y axis
+    // @Units: none
+    // @Range: 0 - 10000
+    // @User: Advanced
+    GSCALAR(GeoCtrl_KOy, "GEOCTRL_KOY", GEOCTRL_KOY_DEFAULT),
+    // @Param: GEOCTRL_KOZ
+    // @DisplayName: kOz for geometric controller
+    // @Description: kOz for geometric controller, which is the D term in rotational control for the z axis
+    // @Units: none
+    // @Range: 0 - 10000
+    // @User: Advanced
+    GSCALAR(GeoCtrl_KOz, "GEOCTRL_KOZ", GEOCTRL_KOZ_DEFAULT),
+    // @Param: l1enable
+    // @DisplayName: enabling switch for L1 adaptive controller
+    // @Description: 1 for enable, 0 for disable
+    // @Units: none
+    // @Range: 0 or 1
+    // @User: Advanced
+    
+
+#endif
+
+
+
+
+
+
+
     // ACRO_RP_EXPO moved to Command Model class
 
 #if MODE_ACRO_ENABLED == ENABLED

@@ -386,6 +386,23 @@ public:
         k_param_throw_altitude_min,
         k_param_throw_altitude_max,
 
+        
+        // position P term
+        k_param_GeoCtrl_Kpx = 265, // kpx for geometric controller
+        k_param_GeoCtrl_Kpy,       // kpy for geometric controller
+        k_param_GeoCtrl_Kpz,       // kpz for geometric controller
+        // position D term
+        k_param_GeoCtrl_Kvx,       // kvx for geometric controller
+        k_param_GeoCtrl_Kvy,       // kvy for geometric controller
+        k_param_GeoCtrl_Kvz,       // kvz for geometric controller
+        // angular P term
+        k_param_GeoCtrl_KRx,       // kRx for geometric controller
+        k_param_GeoCtrl_KRy,       // kRy for geometric controller
+        k_param_GeoCtrl_KRz,       // kRz for geometric controller
+        // angular D term
+        k_param_GeoCtrl_KOx,       // kOmegax for geometric controller
+        k_param_GeoCtrl_KOy,       // kOmegay for geometric controller
+        k_param_GeoCtrl_KOz = 276, // kOmegaz for geometric controller
         // the k_param_* space is 9-bits in size
         // 511: reserved
     };
@@ -462,6 +479,23 @@ public:
     AP_Int8         fs_crash_check;
     AP_Float        fs_ekf_thresh;
     AP_Int16        gcs_pid_mask;
+
+    // Geometric controller
+    AP_Float GeoCtrl_Kpx; // kpx for geometric controller
+    AP_Float GeoCtrl_Kpy; // kpy for geometric controller
+    AP_Float GeoCtrl_Kpz; // kpz for geometric controllerF
+    AP_Float GeoCtrl_Kvx; // kvx for geometric controller
+    AP_Float GeoCtrl_Kvy; // kvy for geometric controller
+    AP_Float GeoCtrl_Kvz; // kvz for geometric controllerF
+    AP_Float GeoCtrl_KRx; // kRx for geometric controller
+    AP_Float GeoCtrl_KRy; // kRy for geometric controller
+    AP_Float GeoCtrl_KRz; // kRz for geometric controllerF
+    AP_Float GeoCtrl_KOx; // kOmegax for geometric controller
+    AP_Float GeoCtrl_KOy; // kOmegay for geometric controller
+    AP_Float GeoCtrl_KOz; // kOmegaz for geometric controller
+
+
+
 
 #if MODE_THROW_ENABLED == ENABLED
     AP_Enum<ModeThrow::PreThrowMotorState>         throw_motor_start;
