@@ -1,9 +1,11 @@
 #include "Copter.h"
 #include <GCS_MAVLink/GCS.h>
 #include <AP_HAL/AP_HAL.h>
+#include <AP_Logger/AP_Logger.h>
 #include <AP_Motors/AP_Motors_Class.h> // for sending motor speed
 #include "mode.h"
 #include"Geometric_Trajectory_Generate.h"
+#include <AP_Math/AP_Math.h>
 /*
  * Init and run calls for Geometric flight mode
  */
@@ -76,13 +78,28 @@ void ModeGeometric::run()
     static uint32_t last_time_in_geometric=0;
     static Vector3f enterpos;
     static int8_t getposAvailable=0;
+    static int8_t trajectory_num=0;
     uint32_t now_time_in_geometric=AP_HAL::micros();
 
 
     if (initial_time_in_geometric==0 || 0.000001f *(now_time_in_geometric-last_time_in_geometric)>0.1){ //first or reenter this mode
         initial_time_in_geometric=AP_HAL::micros();
         getposAvailable = ahrs.get_relative_position_NED_origin(enterpos);
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "114514");
+
+        uint8_t rc6value = rc().channel(CH_6)->percent_input();
+        if(rc6value<=40){
+            trajectory_num = 1;
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "POS");
+        }
+        if(rc6value>40 && rc6value<60){
+            trajectory_num = 2;
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "EIGHT");
+        }
+        if(rc6value>=60){
+            trajectory_num = 3;
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "CIRCLE");
+        }
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Init of Trajectory");
     }
 
     float timeInThisRun =(float) 0.000001f * (now_time_in_geometric - initial_time_in_geometric);
@@ -95,23 +112,63 @@ void ModeGeometric::run()
     Vector2f targetYaw;
     Vector2f targetYaw_dot;
     Vector2f targetYaw_ddot;
+
+    Vector3f error_w;
+    Vector3f error_R;
+    Vector3f error_x;
+    Vector3f error_v;
     
-    Trajectory_Generate_LINE(timeInThisRun, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
+    //exit, switch ch6 ,enter again
+    switch (trajectory_num)
+    {
+    case 1:
+        //POS
+        Trajectory_Generate_POS(&targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
+       
+        break;
+    case 2:
+        //8
+       Trajectory_Generate_EIGHT(timeInThisRun, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
+        break;
+    case 3:
+        //circle
+        Trajectory_Generate_CIRCLE(timeInThisRun, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
+        break;
+
+
+    default:
+        Trajectory_Generate_POS(&targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "VOID Trajectory NUM");
+        break;
+    }
+
+    // Trajectory_Generate_LINE(timeInThisRun, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
+    // Trajectory_Generate_SINWAVE(timeInThisRun, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
+    // Trajectory_Generate_BIGSINWAVE(timeInThisRun, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
+    // Trajectory_Generate_CIRCLE(timeInThisRun, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
+    
     // Trajectory_Generate_POS(&targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
+
 
     //start the trajectory tracking from current pos ,instead of the origin
     if (getposAvailable){
         targetPos = targetPos + enterpos;
     }
 
-    thrustAndMomentCmd=ModeGeometric::GeometricTrajectoryController(targetPos, targetVel, targetAcc, targetJerk, targetSnap, targetYaw, targetYaw_dot, targetYaw_ddot);
+    thrustAndMomentCmd=ModeGeometric::GeometricTrajectoryController(targetPos, targetVel, targetAcc, targetJerk, targetSnap, targetYaw, targetYaw_dot, targetYaw_ddot,&error_w,&error_R,&error_x,&error_v);
     /**/
+   
    //end
-    
+    VectorN<float,4> adaptiveTerm;
+    adaptiveTerm=ModeGeometric::AdaptiveController(error_w,error_R,error_x,error_v);
+
+    thrustAndMomentCmd[0]=thrustAndMomentCmd[0]+1;
+    thrustAndMomentCmd[1]=thrustAndMomentCmd[1]+0.05;
+
 
     // motor mixing
     VectorN<float, 4> motorPWM;
-    motorPWM = motorMixing(thrustAndMomentCmd);
+    motorPWM = motorMixing(thrustAndMomentCmd + adaptiveTerm);
 
     // motorPWM saturation
     if (motorPWM[0] < 0) {motorPWM[0] = 0;}
@@ -271,7 +328,11 @@ VectorN<float, 4> ModeGeometric::GeometricTrajectoryController(
                                                     Vector3f targetSnap,
                                                     Vector2f targetYaw,
                                                     Vector2f targetYaw_dot,
-                                                    Vector2f targetYaw_ddot)
+                                                    Vector2f targetYaw_ddot,
+                                                    Vector3f *error_w,
+                                                    Vector3f *error_R,
+                                                    Vector3f *error_x,
+                                                    Vector3f *error_v)
 {
     Vector3f r_error;
     Vector3f v_error;
@@ -307,9 +368,11 @@ VectorN<float, 4> ModeGeometric::GeometricTrajectoryController(
     
     // Position Error (ep)
     r_error = statePos - targetPos;
+    *error_x=r_error;
 
     // Velocity Error (ev)
     v_error = stateVel - targetVel;
+    *error_v=v_error;
 
     // Target force
     target_force.x = kg_vehicleMass * targetAcc.x - g.GeoCtrl_Kpx * r_error.x - g.GeoCtrl_Kvx * v_error.x;
@@ -354,6 +417,7 @@ VectorN<float, 4> ModeGeometric::GeometricTrajectoryController(
 
     Matrix3f eRM = (Rdes.transposed() * R - R.transposed() * Rdes) / 2;
     eR = veeOperator(eRM);
+    *error_R=eR;
 
     Vector3f Omega = AP::ahrs().get_gyro();
 
@@ -441,6 +505,7 @@ VectorN<float, 4> ModeGeometric::GeometricTrajectoryController(
 
     // eomega (angular velocity error)
     ew = Omega - R.transposed() * Rdes * Omegad;
+    *error_w=ew;
 
     // Compute the moment
     M.x = -g.GeoCtrl_KRx * eR.x - g.GeoCtrl_KOx * ew.x;
@@ -482,6 +547,153 @@ VectorN<float, 4> ModeGeometric::GeometricTrajectoryController(
 
     
 }
+VectorN<float, 4> ModeGeometric::AdaptiveController(Vector3f error_w,
+                                        Vector3f error_R,
+                                        Vector3f error_x,
+                                        Vector3f error_v){
+    static Matrix3f W_x(Vector3f(1,0,0),Vector3f(0,1,0),Vector3f(0,0,1));
+    static Vector3f theta_x = Vector3f(0, 0, 0);
+    
+    static Matrix3f W_R(Vector3f(0.1,0,0),Vector3f(0,0.1,0),Vector3f(0,0,0.1));
+    static Vector3f theta_R = Vector3f(0, 0, 0);
+
+
+    static uint32_t now_time=0;
+    static uint32_t last_time=0;
+    float dt=0;
+
+    Vector3f theta_x_dot={0,0,0};
+    Vector3f theta_R_dot={0,0,0};
+
+    now_time=AP_HAL::micros();
+    if(last_time==0){
+        last_time=now_time;
+    }
+    
+    dt =(float) 0.000001f * (now_time - last_time);
+    // gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",dt);
+
+    
+    Vector3f ev_c1ex;
+    ev_c1ex = error_v + error_x * g.GeoCtrl_C1;
+
+    float norm_theta_x = vector_2norm(theta_x);
+    Matrix3f theta_x_T(Vector3f(theta_x.x,0,0),Vector3f(theta_x.y,0,0),Vector3f(theta_x.z,0,0));
+    Matrix3f theta_x_Mat(Vector3f(theta_x.x,theta_x.y,theta_x.z),Vector3f(0,0,0),Vector3f(0,0,0));
+
+    if(norm_theta_x < g.GeoCtrl_BX || ((fabsf(norm_theta_x - g.GeoCtrl_BX)<=1e-3f) && ( (theta_x_T * (W_x.transposed()) * ev_c1ex).x <= 0) )){
+        theta_x_dot= (W_x.transposed()) * ev_c1ex * g.GeoCtrl_GAX;
+
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "case1\n");
+    }    
+    else{
+ 
+        Matrix3f theta_x_T_theta=(theta_x_T * theta_x_Mat);
+        Matrix3f theta_x_T_theta_inv;
+        if( theta_x_T_theta.inverse(theta_x_T_theta_inv)){
+            Matrix3f eye3(Vector3f(1,0,0),Vector3f(0,1,0),Vector3f(0,0,1));
+            Matrix3f I_theta = eye3 - (theta_x_Mat * theta_x_T) * theta_x_T_theta_inv;
+            theta_x_dot =  I_theta * W_x.transposed() * ev_c1ex;
+
+            theta_x_dot.x = g.GeoCtrl_GAX * theta_x_dot.x;
+            theta_x_dot.y = g.GeoCtrl_GAX * theta_x_dot.y;
+            theta_x_dot.z = g.GeoCtrl_GAX * theta_x_dot.z;
+
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "case2\n");
+        }
+        else{
+            theta_x_dot.x = 0;
+            theta_x_dot.y = 0;
+            theta_x_dot.z = 0;
+
+            // Matrix3f eye3(Vector3f(1,0,0),Vector3f(0,1,0),Vector3f(0,0,1));
+            // Matrix3f I_theta = eye3 - (theta_x_Mat * theta_x_T) * theta_x_T_theta_inv;
+            // theta_x_dot =  I_theta * W_x.transposed() * ev_c1ex;
+
+            // theta_x_dot.x = g.GeoCtrl_GAX * theta_x_dot.x;
+            // theta_x_dot.y = g.GeoCtrl_GAX * theta_x_dot.y;
+            // theta_x_dot.z = g.GeoCtrl_GAX * theta_x_dot.z;
+
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "case3\n");
+        }
+        
+    }
+    
+    theta_x = theta_x + theta_x_dot * dt;
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",theta_x.x);
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",theta_x.y);
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",theta_x.z);
+
+    // Z-Axis [zB]
+    Quaternion q;
+    ahrs.get_quat_body_to_ned(q);
+
+    Matrix3f R;
+    q.rotation_matrix(R); // transforming the quaternion q to rotation matrix R
+
+    Vector3f z_axis;
+    z_axis = R.colz();
+
+    // adaptive thrust [F]
+    float adaptive_thrust = -(-W_x * theta_x) * z_axis;
+    // gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",adaptive_thrust);
+    
+
+    // Vector3f ev_c1ex;
+    // ev_c1ex.x=(error_v.x + g.GeoCtrl_C1  * error_x.x);
+    // ev_c1ex.y=(error_v.y + g.GeoCtrl_C1  * error_x.y);
+    // ev_c1ex.z=(error_v.z + g.GeoCtrl_C1  * error_x.z);
+
+    Vector3f ew_c2er;
+    // ew_c2er.x=(error_w.x + g.GeoCtrl_C2  * error_R.x);
+    // ew_c2er.y=(error_w.y + g.GeoCtrl_C2  * error_R.y);
+    // ew_c2er.z=(error_w.z + g.GeoCtrl_C2  * error_R.z);
+    ew_c2er=error_w + error_R * g.GeoCtrl_C2;
+
+    theta_R_dot = (W_R.transposed()) * ew_c2er * g.GeoCtrl_GAR ;
+
+    theta_R = theta_R + theta_R_dot * dt;
+
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",theta_R.x);
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",theta_R.y);
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",theta_R.z);
+
+    Vector3f adaptive_Moment;
+    adaptive_Moment = - W_R * theta_R;
+
+    // gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",adaptive_Moment.x);
+    // gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",adaptive_Moment.y);
+    // gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",adaptive_Moment.z);
+
+    // gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",error_x.x);
+    // gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",error_x.y);
+    // gcs().send_text(MAV_SEVERITY_CRITICAL, "%.8f\n",error_x.z);
+
+
+
+    VectorN<float, 4> adaptiveTermOutput;
+    adaptiveTermOutput[0] = adaptive_thrust;
+    adaptiveTermOutput[1] = adaptive_Moment.x;
+    adaptiveTermOutput[2] = adaptive_Moment.y;
+    adaptiveTermOutput[3] = adaptive_Moment.z;
+
+    // logging
+    AP::logger().Write("THET","TimeUS,tx1,tx2,tx3,tr1,tr2,tr3", "Qffffff",
+                    AP_HAL::micros64(),
+                    (theta_x.x),
+                    (theta_x.y),
+                    (theta_x.z),
+                    (theta_R.x),
+                    (theta_R.y),
+                    (theta_R.z)
+                        );
+    
+
+    last_time=now_time;
+    return adaptiveTermOutput;
+}
+
+
 
 Matrix3f ModeGeometric::hatOperator(Vector3f input)
 {
@@ -528,8 +740,8 @@ VectorN<float, 4> ModeGeometric::motorMixing(VectorN<float, 4> thrustMomentCmd)
     const float a_M = 0.000011667;
     const float b_M = 0.0059137;
 #elif (REAL_OR_SITL) // parameters for real drone
-    const float L = 0.175; // longer distance between adjacent motors
-    const float D = 0.131; // shorter distance between adjacent motors
+    const float L = 0.25; // longer distance between adjacent motors
+    const float D = 0.25; // shorter distance between adjacent motors
     const float a_F = 0.0009251;
     const float b_F = 0.021145;
     const float a_M = 0.00001211;
@@ -806,4 +1018,10 @@ Matrix3f ModeGeometric::JoyStickToTargetAttitude(){
                             Vector3f(x_axis_attitude_target.z, y_axis_attitude_target.z, z_axis_attitude_target.z)); 
     return target_attitude;
     
+}
+
+float ModeGeometric::vector_2norm(const Vector3f A) {
+    float ans;
+    ans=(A[0])*(A[0])+(A[1])*(A[1])+(A[2])*(A[2]);
+    return sqrtf(ans);
 }

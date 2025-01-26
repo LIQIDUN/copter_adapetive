@@ -405,6 +405,25 @@
  #define GEOCTRL_KOZ_DEFAULT          0.04f
 #endif
 
+#ifndef GEOCTRL_C1_DEFAULT
+ #define GEOCTRL_C1_DEFAULT          0.04f
+#endif
+
+#ifndef GEOCTRL_C2_DEFAULT
+ #define GEOCTRL_C2_DEFAULT          0.04f
+#endif
+
+#ifndef GEOCTRL_GAX_DEFAULT
+ #define GEOCTRL_GAX_DEFAULT          0.04f
+#endif
+
+#ifndef GEOCTRL_GAR_DEFAULT
+ #define GEOCTRL_GAR_DEFAULT          0.04f
+#endif
+
+#ifndef GEOCTRL_BX_DEFAULT
+ #define GEOCTRL_BX_DEFAULT          0.4f
+#endif
 
 #elif REAL_OR_SITL
 // default ACRL controller parameters (real)
@@ -456,6 +475,25 @@
  #define GEOCTRL_KOZ_DEFAULT          0.004f
 #endif
 
+#ifndef GEOCTRL_C1_DEFAULT
+ #define GEOCTRL_C1_DEFAULT          0.04f
+#endif
+
+#ifndef GEOCTRL_C2_DEFAULT
+ #define GEOCTRL_C2_DEFAULT          0.04f
+#endif
+
+#ifndef GEOCTRL_GAX_DEFAULT
+ #define GEOCTRL_GAX_DEFAULT          0.04f
+#endif
+
+#ifndef GEOCTRL_GAR_DEFAULT
+ #define GEOCTRL_GAR_DEFAULT          0.04f
+#endif
+
+#ifndef GEOCTRL_BX_DEFAULT
+ #define GEOCTRL_BX_DEFAULT          0.4f
+#endif
 
 #endif
 

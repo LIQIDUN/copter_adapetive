@@ -15,6 +15,48 @@ void Trajectory_Generate_LINE(float timeInThisRun,
                              Vector2f *targetYaw, 
                              Vector2f *targetYaw_dot, 
                              Vector2f *targetYaw_ddot);
+
+void Trajectory_Generate_SINWAVE(float timeInThisRun,
+                             Vector3f *targetPos, 
+                             Vector3f *targetVel, 
+                             Vector3f *targetAcc, 
+                             Vector3f *targetJerk, 
+                             Vector3f *targetSnap, 
+                             Vector2f *targetYaw, 
+                             Vector2f *targetYaw_dot, 
+                             Vector2f *targetYaw_ddot);
+
+void Trajectory_Generate_BIGSINWAVE(float timeInThisRun,
+                             Vector3f *targetPos, 
+                             Vector3f *targetVel, 
+                             Vector3f *targetAcc, 
+                             Vector3f *targetJerk, 
+                             Vector3f *targetSnap, 
+                             Vector2f *targetYaw, 
+                             Vector2f *targetYaw_dot, 
+                             Vector2f *targetYaw_ddot);
+
+void Trajectory_Generate_CIRCLE(float timeInThisRun,
+                             Vector3f *targetPos, 
+                             Vector3f *targetVel, 
+                             Vector3f *targetAcc, 
+                             Vector3f *targetJerk, 
+                             Vector3f *targetSnap, 
+                             Vector2f *targetYaw, 
+                             Vector2f *targetYaw_dot, 
+                             Vector2f *targetYaw_ddot);
+
+void Trajectory_Generate_EIGHT(float timeInThisRun,
+                             Vector3f *targetPos, 
+                             Vector3f *targetVel, 
+                             Vector3f *targetAcc, 
+                             Vector3f *targetJerk, 
+                             Vector3f *targetSnap, 
+                             Vector2f *targetYaw, 
+                             Vector2f *targetYaw_dot, 
+                             Vector2f *targetYaw_ddot);
+
+
 void Trajectory_Generate_POS(
                              Vector3f *targetPos, 
                              Vector3f *targetVel, 

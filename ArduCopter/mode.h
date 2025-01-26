@@ -1617,9 +1617,9 @@ public:
         // const Matrix3f J = {0.0027, 0, 0, 0, 0.0028, 0, 0, 0, 0.0037}; // This is pulled from SIM_Motor.cpp
         // const Matrix3f Jinv = {370.37, 0, 0, 0, 357.143, 0, 0, 0, 270.27}; // hand-computed
     #elif (REAL_OR_SITL) // Real 
-        const float kg_vehicleMass = 0.62;   // weight for the real drone
-        const Matrix3f J = {0.002016, 0, 0, 0, 0.001827, 0, 0, 0, 0.00322}; // This is from CAD model of the real drone
-        const Matrix3f Jinv = {496.03, 0, 0, 0, 547.345, 0, 0, 0, 310.559}; // hand-computed
+        const float kg_vehicleMass = 0.72;   // weight for the real drone
+        const Matrix3f J = {0.00213388, 0, 0, 0, 0.00348709, 0, 0, 0, 0.00489948}; // This is from CAD model of the real drone,import lqd
+        // const Matrix3f Jinv = {496.03, 0, 0, 0, 547.345, 0, 0, 0, 310.559}; // hand-computed
     #endif
     
 protected:
@@ -1637,8 +1637,16 @@ private:
                                                     Vector3f targetSnap,
                                                     Vector2f targetYaw,
                                                     Vector2f targetYaw_dot,
-                                                    Vector2f targetYaw_ddot);// controller for trajectory control
-
+                                                    Vector2f targetYaw_ddot,
+                                                    Vector3f *error_w,
+                                                    Vector3f *error_R,
+                                                    Vector3f *error_x,
+                                                    Vector3f *error_v);// controller for trajectory control
+    VectorN<float, 4> AdaptiveController(
+                                        Vector3f error_w,
+                                        Vector3f error_R,
+                                        Vector3f error_x,
+                                        Vector3f error_v);
 
     Matrix3f hatOperator(Vector3f input);
     Vector3f veeOperator(Matrix3f input);
@@ -1647,7 +1655,9 @@ private:
     VectorN<float,4> iterativeMotorMixing(VectorN<float, 4> w_input, VectorN<float, 4> thrustMomentCmd, float a_F, float b_F, float a_M, float b_M, float L, float D);
     VectorN<float,16> mat4Inv(VectorN<float,4> coefficientRow1, VectorN<float,4> coefficientRow2, VectorN<float,4> coefficientRow3, VectorN<float,4> coefficientRow4);
     Matrix3f JoyStickToTargetAttitude();
+    float vector_2norm(const Vector3f A);
 
+    
 };
 
 

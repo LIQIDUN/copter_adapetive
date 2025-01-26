@@ -403,6 +403,13 @@ public:
         k_param_GeoCtrl_KOx,       // kOmegax for geometric controller
         k_param_GeoCtrl_KOy,       // kOmegay for geometric controller
         k_param_GeoCtrl_KOz = 276, // kOmegaz for geometric controller
+
+        k_param_GeoCtrl_C1 = 277,
+        k_param_GeoCtrl_C2,
+        k_param_GeoCtrl_GAX,
+        k_param_GeoCtrl_GAR = 281,
+        k_param_GeoCtrl_BX = 282,
+
         // the k_param_* space is 9-bits in size
         // 511: reserved
     };
@@ -493,7 +500,11 @@ public:
     AP_Float GeoCtrl_KOx; // kOmegax for geometric controller
     AP_Float GeoCtrl_KOy; // kOmegay for geometric controller
     AP_Float GeoCtrl_KOz; // kOmegaz for geometric controller
-
+    AP_Float GeoCtrl_C1;
+    AP_Float GeoCtrl_C2;
+    AP_Float GeoCtrl_GAX;
+    AP_Float GeoCtrl_GAR;
+    AP_Float GeoCtrl_BX;
 
 
 
